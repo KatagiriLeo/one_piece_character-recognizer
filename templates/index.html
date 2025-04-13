@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Piece Character Recognition</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1), rgba(99, 102, 241, 0.1));
+            background-size: 200% 200%;
+            animation: gradientFlow 15s ease infinite;
+            z-index: -1;
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+        
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem; /* Reduced from 2.8rem for better balance */
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 12px; /* Slightly increased spacing */
+            letter-spacing: 1.5px; /* Adjusted for better readability */
+            line-height: 1.2; /* Prevent text overlap */
+        }
+
+        /* Progressive text animation styles */
+        .progressive-text span {
+            opacity: 0;
+            display: inline-block; /* Ensures spaces and underscores are preserved */
+            transition: opacity 0.3s ease;
+        }
+
+        .progressive-text span.visible {
+            opacity: 1;
+        }
+        
+        .subtitle {
+            font-size: 1rem; /* Reduced from 1.2rem to balance with title */
+            color: var(--text-secondary);
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--primary);
+        }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        
+        .icon {
+            font-size: 1.4em;
+            color: var(--primary);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover .icon {
+            transform: scale(1.2);
+        }
+        
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .file-input-container {
+            position: relative;
+        }
+        
+        .file-input-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px dashed #475569;
+            background-color: #293548;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            border-color: var(--primary);
+            background-color: #2d3a4f;
+        }
+        
+        .file-input-label i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        
+        .file-input-text {
+            text-align: center;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-count {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        button {
+            padding: 14px 24px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .error {
+            color: var(--error);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            text-align: center;
+        }
+        
+        .success {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .prediction-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #334155;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .prediction-result.show {
+            display: block;
+            opacity: 1;
+        }
+        
+        .result-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .character-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .character-image-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .character-image-container img {
+            max-width: 200px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .character-image-container img.fade-in {
+            opacity: 1;
+        }
+        
+        .image-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 1px solid var(--primary);
+            display: none;
+        }
+        
+        .image-preview img.show {
+            display: block;
+        }
+        
+        .image-error {
+            color: var(--error);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .placeholder-image {
+            max-width: 200px;
+            border-radius: 8px;
+            opacity: 0.7;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="particles"></div>
+    <div class="app-container">
+        <header>
+            <h1 class="progressive-text" id="progressiveTitle"></h1>
+            <div class="subtitle">Find out which One Piece character you resemble!</div>
+        </header>
+        
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-magic icon"></i>
+                Identify Character
+            </div>
+            
+            <form action="/predict" method="POST" enctype="multipart/form-data" id="predictForm">
+                <div class="form-group">
+                    <div class="file-input-container">
+                        <label class="file-input-label">
+                            <i class="fas fa-image"></i>
+                            <div class="file-input-text">
+                                <span>Upload your image</span>
+                                <br>
+                                <small>Discover your One Piece character match</small>
+                            </div>
+                            <input type="file" id="predict_file" name="predict_file" accept="image/*" required>
+                        </label>
+                        <div class="image-preview">
+                            <img id="previewImage" alt="Image preview">
+                        </div>
+                    </div>
+                    <div class="file-count" id="predictFileCount">No file selected</div>
+                </div>
+                
+                <button type="submit">
+                    <i class="fas fa-search"></i>
+                    Identify Character
+                </button>
+            </form>
+            
+            <div class="prediction-result" id="predictionResult">
+                <div class="result-title">
+                    <i class="fas fa-check-circle" style="color: var(--success)"></i>
+                    Prediction Result
+                </div>
+                <div>
+                    Character: <span class="character-name" id="predictedCharacter">Unknown</span>
+                </div>
+                <div class="character-image-container" id="characterImageContainer">
+                    <img id="characterImage" alt="Predicted character image">
+                    <div class="image-error" id="imageError" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Progressive text animation with underscores
+        const titleText = "One Piece Character Recognition";
+        const titleWithUnderscores = titleText.split(" ").join("_"); // "One_Piece_Character_Recognition"
+        const titleElement = document.getElementById("progressiveTitle");
+
+        // Split the title into characters and wrap each in a span
+        titleWithUnderscores.split("").forEach(char => {
+            const span = document.createElement("span");
+            span.textContent = char;
+            titleElement.appendChild(span);
+        });
+
+        // Function to animate the title
+        function animateTitle() {
+            const spans = titleElement.querySelectorAll("span");
+            spans.forEach(span => span.classList.remove("visible")); // Reset visibility
+            spans.forEach((span, index) => {
+                setTimeout(() => {
+                    span.classList.add("visible");
+                }, index * 100); // 100ms delay between each character
+            });
+        }
+
+        // Run the animation initially
+        animateTitle();
+
+        // Repeat the animation every 30 seconds
+        setInterval(animateTitle, 30000); // 30 seconds = 30,000 milliseconds
+
+        // Existing JavaScript for image prediction and fade animation
+        const predictFileInput = document.getElementById('predict_file');
+        const predictFileCount = document.getElementById('predictFileCount');
+        const predictForm = document.getElementById('predictForm');
+        const predictionResult = document.getElementById('predictionResult');
+        const predictedCharacter = document.getElementById('predictedCharacter');
+        const characterImageContainer = document.getElementById('characterImageContainer');
+        const characterImage = document.getElementById('characterImage');
+        const previewImage = document.getElementById('previewImage');
+        const imageError = document.getElementById('imageError');
+
+        // Placeholder image (grey square)
+        const placeholderImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAKKADAAQAAAABAAAAKAAAAAD/7QA4AAAAvklEQVRYCe2WwQ7CMAxFXxWv0Ctp6g3iCbpF3SB1knoD2SCel42hYJYsZxI/k3O+GTgAIICmE3FGL6E+AKb6eK6qIgA4a6pIAEBzRRUAwF1TBQAAz1UVAADvrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDwrqoAALirKgAA3l1VAQDw7gVcojA4XjI5RwAAAABJRU5ErkJggg==';
+
+        predictFileInput.addEventListener('change', () => {
+            const file = predictFileInput.files[0];
+            predictFileCount.textContent = file ? `Selected: ${file.name}` : 'No file selected';
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    previewImage.classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImage.src = '';
+                previewImage.classList.remove('show');
+            }
+        });
+        
+        predictForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const submitBtn = predictForm.querySelector('button');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Identifying...';
+            submitBtn.disabled = true;
+            
+            const formData = new FormData(predictForm);
+            
+            predictionResult.classList.remove('show');
+            characterImageContainer.style.display = 'none';
+            characterImage.src = '';
+            characterImage.classList.remove('fade-in');
+            imageError.style.display = 'none';
+            imageError.textContent = '';
+            predictedCharacter.textContent = 'Analyzing...';
+            previewImage.src = '';
+            previewImage.classList.remove('show');
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error(`Network error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                
+                predictedCharacter.textContent = data.predicted_character.replace(/_/g, ' ') || 'Unknown';
+                characterImageContainer.style.display = 'block';
+                
+                if (data.error || !data.representative_image) {
+                    characterImage.src = placeholderImage;
+                    characterImage.classList.add('fade-in', 'placeholder-image');
+                    imageError.textContent = data.error || 'No image available for this character.';
+                    imageError.style.display = 'block';
+                } else {
+                    const img = new Image();
+                    img.src = data.representative_image;
+                    img.onload = () => {
+                        characterImage.src = img.src;
+                        characterImage.classList.add('fade-in');
+                    };
+                    img.onerror = () => {
+                        characterImage.src = placeholderImage;
+                        characterImage.classList.add('fade-in', 'placeholder-image');
+                        imageError.textContent = `Failed to load image: ${data.representative_image}`;
+                        imageError.style.display = 'block';
+                        console.error('Image load failed:', img.src);
+                    };
+                }
+                
+                predictionResult.classList.add('show');
+                
+                submitBtn.innerHTML = '<i class="fas fa-search"></i> Identify Character';
+                submitBtn.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                const existingError = predictForm.querySelector('.error');
+                if (existingError) existingError.remove();
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = `Error: ${error.message}`;
+                messageDiv.className = 'error';
+                predictForm.appendChild(messageDiv);
+                setTimeout(() => messageDiv.remove(), 7000);
+                predictionResult.classList.remove('show');
+                submitBtn.innerHTML = '<i class="fas fa-search"></i> Identify Character';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

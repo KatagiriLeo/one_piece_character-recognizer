@@ -87,7 +87,7 @@ def compute_cosine_similarity(emb1, emb2):
 @app.route("/")
 def index():
     logging.info("Serving index page")
-    return render_template("index.html")
+    return "<h1>Hello, Railway!</h1>"
 
 
 @app.route("/predict", methods=["POST"])
